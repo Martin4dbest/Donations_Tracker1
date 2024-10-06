@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #00c6ff, #0072ff); /* Gradient background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8); /* Slightly transparent background */
+            padding: 50px 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 400px; /* Fixed width for the container */
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 2.5em; /* Increased font size for the header */
+        }
+
+        label {
+            font-size: 1.2em; /* Larger font for labels */
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            padding: 10px; /* Padding for the input */
+            width: 100%; /* Full width */
+            border-radius: 5px; /* Rounded corners */
+            border: none; /* Remove default border */
+            margin-bottom: 20px; /* Space below each input */
+        }
+
+        button {
+            background-color: #0072ff; /* Button color */
+            color: white; /* Button text color */
+            padding: 10px 20px;
+            border: none; /* Remove default border */
+            border-radius: 5px; /* Rounded corners */
+            font-size: 1.2em; /* Font size for button */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+
+        button:hover {
+            background-color: #00c6ff; /* Button hover color */
+        }
+
+        a {
+            color: #fff; /* Link color */
+            text-decoration: none; /* Remove underline */
+            margin-top: 20px; /* Space above the link */
+            display: inline-block; /* Inline block for spacing */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login</h2>
+        
+        <form action="{{ url_for('login') }}" method="POST">
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="email" required><br>
+
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="password" required><br>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+    </div>
+</body>
+</html>

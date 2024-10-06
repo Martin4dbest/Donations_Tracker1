@@ -1,0 +1,64 @@
+# Creating a .gitignore file content for the user's project.
+
+gitignore_content = """# Virtual environment
+env/
+new_env/
+
+# Python cache
+__pycache__/
+
+# Database
+donations.db
+
+# Python bytecode
+*.pyc
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+"""
+
+# Writing the .gitignore content to a file
+with open("/mnt/data/.gitignore", "w") as f:
+    f.write(gitignore_content)
+
+"/mnt/data/.gitignore"
