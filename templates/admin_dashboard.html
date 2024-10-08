@@ -19,12 +19,13 @@
         }
 
         .container {
-            text-align: center;
             background: rgba(0, 0, 0, 0.8); /* Slightly transparent background */
-            padding: 50px 20px;
+            padding: 30px 20px;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            width: 400px; /* Fixed width for the container */
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            width: 90%;
+            max-width: 600px; /* Responsive fixed width */
+            text-align: center;
         }
 
         h2 {
@@ -50,6 +51,15 @@
             padding: 10px;
             background: rgba(255, 255, 255, 0.1); /* Light background for list items */
             border-radius: 5px;
+            transition: background-color 0.3s, transform 0.3s; /* Add transition effects */
+            display: flex;
+            justify-content: space-between; /* Space items apart */
+            align-items: center; /* Center vertically */
+        }
+
+        li:hover {
+            background-color: rgba(255, 255, 255, 0.2); /* Highlight on hover */
+            transform: scale(1.02); /* Slight scale on hover */
         }
 
         a {
@@ -58,13 +68,57 @@
             background-color: #0072ff; /* Button color */
             padding: 10px 20px;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.3s; /* Transition for button */
             display: inline-block; /* Make link behave like a button */
             margin: 5px; /* Space around the button */
         }
 
         a:hover {
             background-color: #00c6ff; /* Button hover color */
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .delete-button {
+            background-color: #dc3545; /* Red button for delete */
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333; /* Darker red on hover */
+        }
+
+        form {
+            margin-top: 20px; /* Space above the form */
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%; /* Full-width inputs */
+            padding: 10px;
+            margin-bottom: 10px; /* Space below inputs */
+            border: none;
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+            resize: none; /* Prevent resizing for textarea */
+        }
+
+        button[type="submit"] {
+            background-color: #28a745; /* Green button color */
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #218838; /* Darker green on hover */
         }
     </style>
 </head>
@@ -72,14 +126,38 @@
     <div class="container">
         <h2>Admin Dashboard</h2>
 
-        <h3>Total Donations: ₦{{ total_donations }}</h3>
-
         <h3>Recent Donations</h3>
         <ul>
             {% for donation in recent_donations %}
-                <li>User: {{ donation.user.name }} - ₦{{ donation.amount }}</li>
+                <li>
+                    User: {{ donation.user.name }} - ₦{{ donation.amount }}
+                    <form action="{{ url_for('delete_donation', donation_id=donation.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="delete-button">Delete</button>
+                    </form>
+                </li>
             {% endfor %}
         </ul>
+
+        <h3>Users</h3>
+        <ul>
+            {% for user in users %}
+                <li>
+                    {{ user.name }} - {{ user.email }}
+                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="delete-button">Delete</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <h3>Total Donations: ₦{{ total_donations }}</h3>
+
+        <h3>Send Bulk Email</h3>
+        <form action="{{ url_for('trigger_bulk_email') }}" method="POST">
+            <input type="text" name="subject" placeholder="Email Subject" required>
+            <textarea name="body" rows="5" placeholder="Email Body" required></textarea>
+            <button type="submit">Send Bulk Email</button>
+        </form>
 
         <a href="{{ url_for('logout') }}">Logout</a>
     </div>
