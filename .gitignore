@@ -4,7 +4,7 @@ gitignore_content = """# Virtual environment
 env/
 new_env/
 
-# Python cache
+# Python cache here
 __pycache__/
 
 # Database

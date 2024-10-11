@@ -6,6 +6,7 @@ from flask_mail import Mail, Message
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from twilio.rest import Client
+import random
 
 # App and database setup
 app = Flask(__name__)
@@ -40,7 +41,8 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
     birthday = db.Column(db.Date, nullable=True)  # Add birthday column
     is_admin = db.Column(db.Boolean, default=False)  # Admin flag
-    
+    is_super_admin = db.Column(db.Boolean, default=False)  # Super Admin flag
+    pin = db.Column(db.String(6), nullable=True)  # Field to store admin registration PIN
 
 # Donation model
 class Donation(db.Model):
@@ -80,7 +82,6 @@ def send_bulk_email(subject, body):
         msg.body = body
         mail.send(msg)
 
-
 # Function to create an admin user
 def create_admin(name, email, phone, password, location=None, address=None, birthday=None):
     hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
@@ -90,35 +91,117 @@ def create_admin(name, email, phone, password, location=None, address=None, birt
     db.session.commit()
     print(f"Admin user {name} created successfully.")
 
-# Call this function manually to create an admin user
-
+# Function to create a super admin user
+def create_super_admin(name, email, phone, password, location=None, address=None, birthday=None):
+    hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
+    pin = str(random.randint(100000, 999999))  # Generate a random PIN for the super admin
+    super_admin_user = User(name=name, phone=phone, email=email, location=location, address=address,
+                            password=hashed_password, birthday=birthday, is_admin=True, is_super_admin=True, pin=pin)  # Set is_super_admin=True
+    db.session.add(super_admin_user)
+    db.session.commit()
+    print(f"Super admin user {name} created successfully. Use this PIN for other admin registrations: {pin}")
 
 # Home route
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# User registration
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        name = request.form["name"]
-        phone = request.form["phone"]
-        email = request.form["email"]
-        location = request.form["location"]
-        address = request.form["address"]
-        password = request.form["password"]
-        birthday = request.form.get("birthday")  # Get birthday input
-        hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
-        is_admin = request.form.get("is_admin") == "on"  # 'on' means checked
-        
-        user = User(name=name, phone=phone, email=email, location=location, address=address, password=hashed_password, birthday=datetime.strptime(birthday, '%Y-%m-%d') if birthday else None, is_admin=is_admin)
-        db.session.add(user)
-        db.session.commit()
-        flash("Registration successful! Please log in.", "success")
-        return redirect(url_for("login"))
+# Admin registration route
+@app.route('/register_admin', methods=['POST'])
+def register_admin():
+    name = request.form['name']
+    email = request.form['email']
+    phone = request.form['phone']
+    password = request.form['password']
+    location = request.form['location']
+    address = request.form['address']
+    birthday_str = request.form['birthday']
+    pin = request.form['pin']  # Get the PIN from the form
     
-    return render_template("register.html")
+    # Check if the provided PIN matches the super admin's PIN
+    super_admin = User.query.filter_by(is_super_admin=True).first()  # Get the super admin (assuming only 1 super admin)
+    if super_admin and super_admin.pin == pin:
+        # If the PIN is correct, create an admin
+        birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+        create_admin(name, email, phone, password, location, address, birthday)
+        flash("Admin registered successfully!")
+        return redirect(url_for('admin_dashboard'))
+    else:
+        flash("Invalid Super Admin PIN!")
+        return redirect(url_for('register_admin'))
+    
+
+    
+# User registration route
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # Extract data from form
+        name = request.form['name']
+        phone = request.form['phone']
+        email = request.form['email']
+        location = request.form['location']
+        address = request.form['address']
+        birthday_str = request.form['birthday']  # Birthday as string
+        password = request.form['password']
+        is_admin = 'admin' in request.form  # Check if admin checkbox is checked
+        pin = request.form.get('pin')  # Get the PIN if provided
+
+        # Validate required fields for all users
+        if not name or not phone or not email or not password:
+            flash('Please fill in all required fields.', 'error')
+            return render_template('register.html')
+
+        # If registering as an admin, validate the PIN
+        if is_admin and not pin:
+            flash('Super Admin PIN is required for admin registration.', 'error')
+            return render_template('register.html')
+
+        # If registering as an ordinary user, do not allow PIN to be entered
+        if not is_admin and pin:
+            flash('Ordinary users do not need to provide a PIN.', 'error')
+            return render_template('register.html')
+
+        # Convert the birthday string to a date object
+        try:
+            birthday = datetime.strptime(birthday_str, "%Y-%m-%d").date()
+        except ValueError:
+            flash('Invalid date format for birthday. Please use YYYY-MM-DD.', 'error')
+            return render_template('register.html')
+
+        # Hash the password before saving
+        hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
+
+        # Check if the email already exists in the database
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('Email already exists. Please use a different email.', 'error')
+            return render_template('register.html')
+
+        # Create new user instance
+        new_user = User(
+            name=name,
+            phone=phone,
+            email=email,
+            location=location,
+            address=address,
+            password=hashed_password,
+            birthday=birthday,
+            is_admin=is_admin
+        )
+
+        # Try to add the user to the database
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Registration successful! Please log in.', 'success')  # Added flash message
+            return redirect(url_for('login'))
+        except IntegrityError:
+            db.session.rollback()  # Rollback the session on error
+            flash('An error occurred while creating your account. Please try again.', 'error')
+            return render_template('register.html')
+
+    return render_template('register.html')
 
 # User login
 @app.route("/login", methods=["GET", "POST"])
@@ -131,123 +214,91 @@ def login():
         if user and check_password_hash(user.password, password):
             session["user_id"] = user.id
             session["is_admin"] = user.is_admin  # Set admin status in session
+            session["is_super_admin"] = user.is_super_admin  # Set super admin status in session
             
             flash("Login successful!", "success")
-            return redirect(url_for("admin_dashboard") if user.is_admin else "donate")
+            return redirect(url_for("admin_dashboard") if user.is_super_admin else url_for("donate"))
         else:
             flash("Invalid credentials. Please try again.", "danger")
 
     return render_template("login.html")
 
-# User dashboard
-@app.route("/dashboard")
-def dashboard():
-    if not session.get("user_id"):
-        return redirect(url_for("login"))
-    
-    donations = Donation.query.filter_by(user_id=session["user_id"]).all()
-    return render_template("dashboard.html", donations=donations)
-
-# Admin dashboard
-@app.route("/admin_dashboard")
-def admin_dashboard():
-    if 'user_id' not in session or not session.get('is_admin'):
-        return redirect(url_for('login'))
-
-    users = User.query.all()
-    donations = Donation.query.all()
-
-    total_donations = db.session.query(db.func.sum(Donation.amount)).scalar() or 0
-    recent_donations = Donation.query.order_by(Donation.id.desc()).limit(10).all()
-
-    return render_template(
-        "admin_dashboard.html", 
-        users=users, 
-        donations=donations, 
-        total_donations=total_donations, 
-        recent_donations=recent_donations
-    )
-
-# Add donation
 @app.route("/donate", methods=["GET", "POST"])
 def donate():
     if request.method == "POST":
+        amount = request.form["amount"]
+        currency = request.form["currency"]
         user_id = session.get("user_id")
-        if not user_id:
-            flash("You must be logged in to donate.", "danger")
-            return redirect(url_for("login"))
-        
-        try:
-            amount = float(request.form["amount"])
-            currency = request.form.get("currency", "USD")  # Get currency input, default to USD
-            donation = Donation(user_id=user_id, amount=amount, currency=currency)
-            db.session.add(donation)
-            db.session.commit()
-            
-            # Send acknowledgment email
-            user = User.query.get(user_id)
-            msg = Message("Donation Acknowledgement", sender="noreply@donationtracker.com", recipients=[user.email])
-            msg.body = f"Dear {user.name},\n\nThank you for your generous donation of {currency} {amount}.\nWe truly appreciate your support.\n\nBest regards,\nDonation Tracker Team"
-            mail.send(msg)
 
-            flash("Donation recorded and acknowledgment email sent.", "success")
-            return redirect(url_for("dashboard"))
-        except Exception as e:
-            flash(f"An error occurred: {str(e)}", "danger")
+        # Validate and convert the donation amount
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                flash("Donation amount must be greater than zero.", "danger")
+                return redirect(url_for("donate"))
+        except ValueError:
+            flash("Invalid amount format.", "danger")
             return redirect(url_for("donate"))
+
+        if user_id:
+            donation = Donation(user_id=user_id, amount=amount, currency=currency)
+
+            try:
+                db.session.add(donation)
+                db.session.commit()
+                flash("Thank you for your donation!", "success")
+                # Redirect to a confirmation page or the dashboard
+                return redirect(url_for("donation_success"))  # Adjust to your success page
+            except Exception as e:
+                db.session.rollback()
+                flash("An error occurred while processing your donation. Please try again.", "danger")
+        else:
+            flash("You need to be logged in to donate.", "danger")
+
+        return redirect(url_for("donate"))
 
     return render_template("donate.html")
 
 
+# Admin dashboard
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    donations = Donation.query.all()  # Fetch all donations
+    return render_template("admin_dashboard.html", donations=donations)
 
-# Trigger bulk email sending
-@app.route("/send_bulk_email", methods=["POST"])
-def trigger_bulk_email():
-    subject = request.form.get("subject")
-    body = request.form.get("body")
+# Bulk SMS route
+@app.route("/bulk_sms", methods=["POST"])
+def bulk_sms():
+    message = request.form["message"]
+    send_bulk_sms(message)
+    flash("Bulk SMS sent successfully!", "success")
+    return redirect(url_for("admin_dashboard"))
+
+# Bulk Email route
+@app.route("/bulk_email", methods=["POST"])
+def bulk_email():
+    subject = request.form["subject"]
+    body = request.form["body"]
     send_bulk_email(subject, body)
-    flash("Bulk email sent!", "success")
+    flash("Bulk email sent successfully!", "success")
     return redirect(url_for("admin_dashboard"))
 
-# Route to trigger bulk SMS sending
-@app.route("/send_bulk_sms", methods=["POST"])
-def trigger_bulk_sms():
-    sms_body = request.form.get("sms_body")
-    send_bulk_sms(sms_body)
-    flash("Bulk SMS sent!", "success")
-    return redirect(url_for("admin_dashboard"))
-
-# Delete user
-@app.route('/delete_user/<int:user_id>', methods=['POST'])
-def delete_user(user_id):
-    user = User.query.get(user_id)
-    if user:
-        db.session.delete(user)
-        db.session.commit()
-        flash('User deleted successfully!', 'success')
-    else:
-        flash('User not found.', 'error')
-    return redirect(url_for('admin_dashboard'))
-
-# Delete donation
-@app.route('/delete_donation/<int:donation_id>', methods=['POST'])
-def delete_donation(donation_id):
-    donation = Donation.query.get(donation_id)
-    if donation:
-        db.session.delete(donation)
-        db.session.commit()
-        flash('Donation deleted successfully!', 'success')
-    else:
-        flash('Donation not found.', 'error')
-    return redirect(url_for('admin_dashboard'))
-
-# Logout
+# Logout route
 @app.route("/logout")
 def logout():
-    session.pop("user_id", None)
-    session.pop("is_admin", None)
-    flash("You have been logged out.", "success")
+    session.clear()
+    flash("Logged out successfully!", "success")
     return redirect(url_for("index"))
 
+# Error handling
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template("500.html"), 500
+
+# Run the application
 if __name__ == "__main__":
     app.run(debug=True)

@@ -152,11 +152,28 @@
 
         <h3>Total Donations: ₦{{ total_donations }}</h3>
 
+        <!-- Bulk SMS Form -->
+        <h3>Send Bulk SMS</h3>
+        <form method="POST">
+            <div>
+                <label for="sms_message">Message:</label>
+                <textarea id="sms_message" name="sms_message" required></textarea>
+            </div>
+            <button type="submit" name="send_bulk_sms">Send SMS</button>
+        </form>
+
+        <!-- Bulk Email Form -->
         <h3>Send Bulk Email</h3>
-        <form action="{{ url_for('trigger_bulk_email') }}" method="POST">
-            <input type="text" name="subject" placeholder="Email Subject" required>
-            <textarea name="body" rows="5" placeholder="Email Body" required></textarea>
-            <button type="submit">Send Bulk Email</button>
+        <form method="POST">
+            <div>
+                <label for="email_subject">Subject:</label>
+                <input type="text" id="email_subject" name="email_subject" required>
+            </div>
+            <div>
+                <label for="email_body">Body:</label>
+                <textarea id="email_body" name="email_body" required></textarea>
+            </div>
+            <button type="submit" name="send_bulk_email">Send Email</button>
         </form>
 
         <a href="{{ url_for('logout') }}">Logout</a>
