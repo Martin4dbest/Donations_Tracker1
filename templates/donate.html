@@ -37,8 +37,8 @@
         }
 
         input[type="number"],
-        input[type="text"] {
-            padding: 10px; /* Padding for the input */
+        select {
+            padding: 10px; /* Padding for the input and select */
             width: calc(100% - 22px); /* Full width with padding */
             border-radius: 5px; /* Rounded corners */
             border: none; /* Remove default border */
@@ -70,7 +70,20 @@
             <input type="number" id="amount" name="amount" step="0.01" required><br>
             
             <label for="currency">Currency:</label><br>
-            <input type="text" id="currency" name="currency" required><br>
+            <select id="currency" name="currency" required>
+                <option value="USD">&#36; USD</option>
+                <option value="EUR">&#8364; EUR</option>
+                <option value="GBP">&#163; GBP</option>
+                <option value="NGN">&#8358; NGN</option>
+                <option value="GHS">&#162; GHS (Ghanaian Cedi)</option>
+                <option value="JPY">&#165; JPY</option>
+                <option value="AUD">&#36; AUD</option>
+                <option value="CAD">&#36; CAD</option>
+                <option value="CHF">&#67;&#72;F (Swiss Franc)</option>
+                <option value="ZAR">&#82; ZAR (South African Rand)</option>
+                <option value="INR">&#8377; INR (Indian Rupee)</option>
+                <option value="BRL">&#82;&#36; BRL (Brazilian Real)</option>
+            </select><br>
 
             <button type="submit">Donate</button>
         </form>
