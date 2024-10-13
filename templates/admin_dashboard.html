@@ -126,6 +126,7 @@
     <div class="container">
         <h2>Admin Dashboard</h2>
 
+        <!-- Recent Donations -->
         <h3>Recent Donations</h3>
         <ul>
             {% for donation in recent_donations %}
@@ -135,9 +136,12 @@
                         <button type="submit" class="delete-button">Delete</button>
                     </form>
                 </li>
+            {% else %}
+                <li>No donations found.</li> <!-- Message when no donations exist -->
             {% endfor %}
         </ul>
 
+        <!-- User List -->
         <h3>Users</h3>
         <ul>
             {% for user in users %}
@@ -147,9 +151,12 @@
                         <button type="submit" class="delete-button">Delete</button>
                     </form>
                 </li>
+            {% else %}
+                <li>No users found.</li> <!-- Message when no users exist -->
             {% endfor %}
         </ul>
 
+        <!-- Total Donations -->
         <h3>Total Donations: ₦{{ total_donations }}</h3>
 
         <!-- Bulk SMS Form -->
@@ -176,6 +183,7 @@
             <button type="submit" name="send_bulk_email">Send Email</button>
         </form>
 
+        <!-- Logout Link -->
         <a href="{{ url_for('logout') }}">Logout</a>
     </div>
 </body>

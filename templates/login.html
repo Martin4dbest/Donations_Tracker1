@@ -24,7 +24,8 @@
             padding: 50px 20px;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            width: 400px; /* Fixed width for the container */
+            width: 90%; /* Responsive width */
+            max-width: 400px; /* Maximum width for larger screens */
         }
 
         h2 {
@@ -34,6 +35,8 @@
 
         label {
             font-size: 1.2em; /* Larger font for labels */
+            display: block; /* Block display for labels */
+            margin-bottom: 5px; /* Space below label */
         }
 
         input[type="email"],
@@ -54,6 +57,7 @@
             font-size: 1.2em; /* Font size for button */
             cursor: pointer; /* Pointer cursor on hover */
             transition: background-color 0.3s; /* Smooth transition */
+            width: 100%; /* Full width for the button */
         }
 
         button:hover {
@@ -66,18 +70,64 @@
             margin-top: 20px; /* Space above the link */
             display: inline-block; /* Inline block for spacing */
         }
+
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .alert-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .alert-danger {
+            background-color: #f44336;
+            color: white;
+        }
+
+        @media (max-width: 400px) {
+            h2 {
+                font-size: 2em; /* Adjust header font size for small screens */
+            }
+
+            button {
+                font-size: 1em; /* Adjust button font size for small screens */
+            }
+
+            label {
+                font-size: 1em; /* Adjust label font size for small screens */
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Login</h2>
-        
-        <form action="{{ url_for('login') }}" method="POST">
-            <label for="email">Email:</label><br>
-            <input type="email" id="email" name="email" required><br>
 
-            <label for="password">Password:</label><br>
-            <input type="password" id="password" name="password" required><br>
+        <!-- Flash Messages Section -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul>
+              {% for category, message in messages %}
+                <li class="alert alert-{{ category }}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('login') }}" method="POST">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
 
             <button type="submit">Login</button>
         </form>
